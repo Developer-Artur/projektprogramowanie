@@ -1,0 +1,345 @@
+import json
+import getpass
+from abc import ABC, abstractmethod
+import random
+import copy
+from datetime import datetime
+
+class BlednaklasaEmail(Exception):
+    def __init__(self, message="Błędny adres email. Proszę podać poprawny adres email."):
+        self.message = message
+        super().__init__(self.message)
+class weryfikujemail():
+    def __init__(self,email):
+        self.email = email 
+        if "@" not in self.email:
+            raise BlednaklasaEmail()
+
+class adresemail(weryfikujemail):
+    def __init__(self, email):
+        super().__init__(email)  
+
+class adm:
+    def __init__(self):
+            print("Wybierz opcje:\n 1 - wyjdz \n 2 - usun wszystkie rezerwacje")
+            in1 = input("Wybierz opcję: ")
+            if in1 == "1":
+                print("Wyjście z menu administratora.")
+            elif in1 == "2":
+                with open("dane.json", "r") as file:
+                    d = json.load(file)
+                    for r1 in d["rezerwacjaall"]:
+                        d["zajetemiejsca"].remove(r1["miejsce"])
+                        d["wolnemmiejsca"].append(r1["miejsce"])
+                        d["rezerwacjaall"].remove(r1)
+                d["wolnemmiejsca"].sort(key=lambda x: (x[0], int(x[1:])))
+                with open("dane.json","w") as file:
+                    json.dump(d, file, indent=2)
+class menuadmin():
+    def __init__(self):
+        self._haslo = "admin"
+    
+    @property
+    def haslo(self):
+        return self._haslo
+    
+    @haslo.setter
+    def haslo(self, value):
+        print(self._haslo)
+        if value == self._haslo: 
+            print("Hasło poprawne. Możesz zarządzać rezerwacjami.")
+        else:
+            raise ValueError("Błędne hasło. Spróbuj ponownie.")
+    @classmethod
+    def login(cls):
+        print("W celu zalogowania podaj hasło administratora.")
+        admin = cls() #redirect to the class menuadmin
+        password = getpass.getpass("Hasło: ")
+        while True:
+            try:
+                admin.haslo = password # must be called as a setter
+                break
+            except ValueError as e:
+                print("To nie jest poprawne hasło. Spróbuj ponownie.")
+        adm()
+#memento
+class zapiszsume:
+    def __init__(self, cena):
+        self.cena = cena
+
+class dodajdodatek:
+    def __init__(self,cena):
+        self.cena = cena
+
+    def zmien(self, kwota):
+        self.cena += kwota
+        return zapiszsume(self.cena)
+    def reset(self, zapiszsume):
+        self.cena = zapiszsume.cena
+    
+    def __str__(self):
+        return f"Kwota dodatkowa do zapłaty: {self.cena} zł"
+class Menuupsel:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def wyswietlupsel():
+        y = random.randint(1, 50000)
+        print("Dziekujemy za skorzystanie z naszego systemu rezerwacji miejsc!")
+        print("Platnosc odbedzie sie w kinie przy odbiorze biletu.")
+        print(f"Numer zamowienia to: id{y}")
+        print("Czy chcesz dokupic popcorn lub napoj [T/N]")
+        c = input("Wybierz opcję: ").upper()
+        if c == "T":
+            print("Popcorn kosztuje 15 zł [1], napój 10 zł [2], jesli chcesz dokupić oba to 20 zł [3]")
+            c1 = input("Wybierz opcję: ")
+            dodatek = dodajdodatek(0)
+            backup = zapiszsume(dodatek.cena)
+            if c1 == "1":  
+                z1 = dodatek.zmien(15)
+                print(f"Popcorn został dodany do zamówienia")
+            elif c1 == "2":
+                z1 = dodatek.zmien(10)
+                print(f"Napoje zostały dodane do zamówienia")
+            elif c1 == "3":
+                z1 = dodatek.zmien(20)
+                print(f"Popcorn i napój zostały dodane do zamówienia")
+            print(f"Confij dodatek [C] lub zakoncz [Z]")
+            ch = input("Wybierz opcję: ").upper()
+            if ch == "C":
+               dodatek.reset(backup)
+               print("Dziekujemy za rezerwacje bez dodatkow!")
+               print(dodatek)
+            elif ch == "Z":
+                print("Do zamowienia zostaly dopisane dodatki - dziekujemy!")
+                print(dodatek)
+        else:
+            print("Nie wybrano żadnego dodatku. Bez dodatków")
+
+
+class menu():
+    def __init__(self):
+        pass
+    @staticmethod
+    def wyswietl():
+        choice = 0
+        choicevar = 0
+        while int(choicevar) != 1:
+            print(f"\n-------------------------------------\n")
+            print(f"Witaj w systemie rezerwacji miejsc!\n\033[32mBilety sa wazne na kazdy film dostepny aktualnie w kinach\033[0m\033[31m - Bilety wazne dwa tygodnie od dnia zakupu.\033[0m")
+            print("Wybierz opcję:")
+            print("1. Wyświetl wolne miejsca")
+            print("2. Zarezerwuj miejsce")
+            print("3. Wyświetl rezerwacje")
+            print("4. Wyjdź")
+            print("5. Zaloguj jako administrator")
+            print("6. Ceny biletów")
+            print(f"\n-------------------------------------\n")
+            choice = input("Wybierz opcję: ")
+            if int(choice) == 1:
+                miejsca.wyswietlwolne()
+            elif int(choice) == 2:
+                imie = input("Podaj imię: ")
+                nazwisko = input("Podaj nazwisko: ")
+                while True:
+                    try:
+                        email = input("Podaj adres email: ")
+                        weryfikujemail(email)
+                        break
+                    except BlednaklasaEmail as e:
+                        print(e.message)
+                if not email:
+                    print("Email nie może być pusty.")
+                    continue
+                weryfikujemail(email)
+                miejsca.wyswietlwolne()
+                wyswietlcenybiletu.bilety_ceny()
+                miejsce = input("Podaj wolne miejsce do rezerwacji, aktualnie przy jednym zamowieniu mozna dokonac rezerwacji 1 miejsca: ")
+                m1 = miejsce[0]
+                match m1:
+                    case "A":
+                        rezerwacja = rezerwacjaA(imie, nazwisko, email, miejsce)
+                    case "B":
+                        rezerwacja = rezerwacjaB(imie, nazwisko, email, miejsce)
+                    case "C":
+                        rezerwacja = rezerwacjaC(imie, nazwisko, email, miejsce)
+                    case "D":
+                        rezerwacja = rezerwacjaD(imie, nazwisko, email, miejsce)
+                    case "E":
+                        rezerwacja = rezerwacjaE(imie, nazwisko, email, miejsce)
+                    case _:
+                        print("Nie ma takiego miejsca.")
+                        continue
+                print("Rezerwacja została dokonana. Tworzenie kopi")
+                kopiowanie = rezerwacja.clone()
+                #print(kopiowanie)
+                print(f"Data rezerwacji: {menu.data()} - dzien tygodnia - {menu.dzien()}")
+                print(rezerwacja)
+                Menuupsel.wyswietlupsel()
+                choicevar = 1
+            elif int(choice) == 3:
+                with open("dane.json","r") as rez:
+                    rezjson = json.load(rez)
+                    print(f"-------------------------------------\n")
+                    print("Rezerwacje:")
+                    if rezjson["rezerwacjaall"]:
+                        for r in rezjson["rezerwacjaall"]:
+                            print(f"{r['imie']}, miejsce: {r['miejsce']}")
+                    else:
+                        print(f"\033[31m Aktualnie nie ma rezerwacji\033[0m")
+                    print(f"\n-------------------------------------")
+            elif int(choice) == 4:
+                print("Dziękujemy!")
+                choicevar = 1
+                break
+            elif int(choice) == 5:
+                print("Przekierowanie do logowania...")
+                menuadmin.login()
+                break
+            elif int(choice) == 6:
+                print("Wybierz rzad, aby zobaczyć cenę biletu: A, B C, D, E")
+                rzad = input("Podaj rząd: ").upper()
+                match rzad:
+                    case "A":
+                        rzad_a = rzadA()
+                        print(rzad_a.zwroccene())
+                    case "B":
+                        rzad_b = rzadB()
+                        print(rzad_b.zwroccene())
+                    case "C":
+                        rzad_c = rzadC()
+                        print(rzad_c.zwroccene())
+                    case "D":
+                        rzad_d = rzadD()
+                        print(rzad_d.zwroccene())
+                    case "E":
+                        rzad_e = rzadE()
+                        print(rzad_e.zwroccene())
+                    case _:
+                        print("Nie ma takiego rzędu.")
+                continue
+    @classmethod
+    def data(cls):
+        return datetime.now()
+    @classmethod   
+    def dzien(cls):
+        return datetime.now().strftime("%A")
+
+class miejsca: 
+    def __init__(self):
+       pass
+    @staticmethod
+    def wyswietlwolne():
+            with open("dane.json", "r") as plik:
+                dane = json.load(plik)
+                wolnemiejsca = dane["wolnemmiejsca"]
+                w1 = wolnemiejsca[0][0]
+                temporary = []
+                print(f"\n{"Wolne miejsca:":^60}")
+                for w in wolnemiejsca:
+                    if w[0] == w1:
+                        temporary.append(w)
+                    else:  
+                        print(f"\033[32m{temporary}\033[0m")
+                        w1 = w[0]
+                        temporary = []
+                        temporary.append(w)
+                    if w == wolnemiejsca[-1]:
+                        print(f"\033[32m{temporary}\033[0m")
+
+              
+#template 
+class zarezerwuj(ABC):
+    klient = []
+    def __init__(self, imie, nazwisko,email,miejsce):
+        self.imie = imie
+        self.nazwisko = nazwisko
+        self.email = email
+        self.miejsce = miejsce
+        self.dane = {
+            "imie": self.imie,
+            "nazwisko": self.nazwisko,
+            "email": self.email,
+            "miejsce": self.miejsce,
+            "cena": self.zwroc1cene()
+        }
+        zarezerwuj.klient.append(self.dane)
+        with open("dane.json", "r") as file:
+            d = json.load(file)
+            d["rezerwacjaall"].append(self.dane)
+            d["zajetemiejsca"].append(self.miejsce)
+            d["wolnemmiejsca"].remove(self.miejsce)
+        with open("dane.json","w") as file:
+            json.dump(d, file, indent=2)  
+
+    @abstractmethod
+    def zwroc1cene(self):
+        pass
+#prototype
+    def clone(self): 
+        return copy.deepcopy(self)
+        
+    def __str__(self):
+        return f"Dane rezerwacji {self.imie} {self.nazwisko}, email: {self.email}, miejsce: {self.miejsce}, w cenie: {self.zwroc1cene()} zł"
+
+class rezerwacjaA(zarezerwuj):
+    def zwroc1cene(self):
+        return 20
+class rezerwacjaB(zarezerwuj):
+    def zwroc1cene(self):
+        return 25  
+class rezerwacjaC(zarezerwuj):
+    def zwroc1cene(self):
+        return 30
+class rezerwacjaD(zarezerwuj):
+    def zwroc1cene(self):
+        return 35
+class rezerwacjaE(zarezerwuj):
+    def zwroc1cene(self):
+        return 40
+
+
+class ceny:
+    def __init__(self):
+        self.cena = 0
+    def __str__(self):
+        return f"\nCena rezerwacji zalezy od rzedu"
+
+class rzadA(ceny):
+    def __init__(self):
+        super().__init__()
+        self.cena = 20
+    def zwroccene(self):
+        return f"\nCena za 1 miejsce w rzędzie A wynosi \033[32m{self.cena} zł.\033[0m"
+class rzadB(ceny):
+    def __init__(self):
+        super().__init__()
+        self.cena = 25
+    def zwroccene(self):
+        return f"\nCena za 1 miejsce w rzędzie B wynosi \033[32m{self.cena} zł.\033[0m"
+class rzadC(ceny):
+    def __init__(self):
+        super().__init__()
+        self.cena = 30
+    def zwroccene(self):
+        return f"\nCena za 1 miejsce w rzędzie C wynosi \033[32m{self.cena} zł.\033[0m"
+class rzadD(ceny):
+    def __init__(self):
+        super().__init__()
+        self.cena = 35
+    def zwroccene(self):
+        return f"\nCena za 1 miejsce w rzędzie D wynosi \033[32m{self.cena} zł.\033[0m"
+class rzadE(ceny):
+    def __init__(self):
+        super().__init__()
+        self.cena = 40
+    def zwroccene(self):
+        return f"\nCena za 1 miejsce w rzędzie E wynosi \033[32m{self.cena} zł.\033[0m"
+    
+class wyswietlcenybiletu:
+    @staticmethod 
+    def bilety_ceny():
+        print("Ceny biletów: Rząd A: 20 zł, Rząd B: 25 zł, Rząd C: 30 zł, Rząd D: 35 zł, Rząd E: 40 zł")
+
+menu.wyswietl() #launch the menu
